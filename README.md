@@ -7,7 +7,9 @@ An intelligent, automated hiring assistant that processes job applications via G
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 🎥 Demo
-[Watch the Demo Video](video/vedio.mov)
+[▶️ Click here to watch the demo video](https://github.com/abhiram-1729/smart-hiring-assistant/blob/main/video/vedio.mp4?raw=true)
+
+_(Note: GitHub redirects to the raw file which browser plays)_
 
 ## ✨ Features
 
