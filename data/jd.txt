@@ -1,0 +1,32 @@
+Job Title: Junior AI Engineer
+Location: Remote / Hybrid
+Employment Type: Full-time
+
+About the Role:
+We are seeking a motivated and detail-oriented Junior AI Engineer to join our growing AI engineering team. This entry-level position is ideal for recent graduates or early-career professionals (0-1 years experience) who are eager to work on real-world Large Language Model (LLM) applications and modern AI systems. You will collaborate closely with experienced engineers to design, build, and deploy scalable AI solutions.
+
+Key Responsibilities:
+- Support the development, testing, and deployment of LLM-powered applications.
+- Assist in building Retrieval-Augmented Generation (RAG) pipelines using tools such as LangChain, LlamaIndex, and vector databases.
+- Write clean, modular, and maintainable Python code for experimentation and production use.
+- Collaborate with senior engineers to evaluate models, optimize performance, and improve system reliability.
+- Participate in code reviews, documentation, and continuous improvement of AI workflows.
+
+Required Qualifications:
+- 0–1 year of experience in AI/ML, Data Science, or Software Engineering (internships and academic projects included).
+- Strong proficiency in Python.
+- Familiarity with Large Language Models (e.g., LLaMA, OpenAI models) and LLM orchestration frameworks such as LangChain or LlamaIndex.
+- Fundamental understanding of Deep Learning concepts and neural networks.
+- Strong learning mindset with the ability to quickly adapt to new tools and technologies.
+
+Preferred Qualifications (Nice to Have):
+- Hands-on experience with FastAPI or Flask for building AI-backed APIs.
+- Academic projects, internships, or personal work involving NLP or Generative AI.
+- Basic knowledge of Docker, Git, and modern development workflows.
+- Exposure to vector databases (e.g., FAISS, Chroma, Pinecone) is a plus.
+
+What We Offer:
+- Opportunity to work on cutting-edge GenAI and LLM systems.
+- Mentorship from experienced AI engineers.
+- Flexible work environment.
+- Strong learning and career growth opportunities.
