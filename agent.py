@@ -97,7 +97,8 @@ class HiringAgent:
         {raw_text[:4000]}  # Truncate to avoid context window issues if too long
         
         Return valid JSON matching the ResumeData schema.
-        IMPORTANT: Extract specific technical skills, tools, languages, and frameworks as a flat list of strings. 
+        IMPORTANT: Extract ALL technical skills, tools, languages, and frameworks found in the resume. 
+        List them as a flat list of strings. Be exhaustive.
         Do NOT summarize them into categories (e.g. use "Python", "SQL", "React" instead of "Backend Development").
         
         CRITICAL: For experience_years, ONLY count actual work experience (internships, jobs, freelance).

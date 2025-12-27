@@ -1,161 +1,177 @@
 import streamlit as st
+import json
 import time
 import threading
-import plotly.graph_objects as go
-import os
+from pathlib import Path
 from state_manager import StateManager
 from realtime_bot import BotService
+import plotly.graph_objects as go
 
+# Page config
 st.set_page_config(
-    page_title="AI Resume Agent",
+    page_title="Resume Screening Dashboard",
     page_icon="🤖",
     layout="wide"
 )
 
-# Initialize Session State for Bot Thread
+# Initialize state manager
+state_mgr = StateManager()
+
+# Session state for bot thread
 if 'bot_thread' not in st.session_state:
     st.session_state.bot_thread = None
-if 'stop_event' not in st.session_state:
-    st.session_state.stop_event = threading.Event()
-if 'bot_running' not in st.session_state:
-    st.session_state.bot_running = False
+if 'bot_service' not in st.session_state:
+    st.session_state.bot_service = None
 
-# Sidebar Controls
+# Title
+st.title("🤖 AI Resume Screening Dashboard")
+
+# Sidebar controls
 with st.sidebar:
-    st.title("Admin Controls")
-    jd_path = st.text_input("JD Path", value="data/jd.txt")
-    model_name = st.text_input("Model", value="llama3.2:3b")
-    cutoff = st.slider("ATS Cutoff", 0, 100, 70)
+    st.header("Bot Controls")
     
-    col_start, col_stop = st.columns(2)
+    col1, col2 = st.columns(2)
     
-    with col_start:
-        if st.button("Start Bot", disabled=st.session_state.bot_running, type="primary"):
-            if not st.session_state.bot_running:
-                st.session_state.stop_event.clear()
-                service = BotService(jd_path, model_name, cutoff, 10) # 10s interval for UI responsiveness
-                t = threading.Thread(target=service.run, args=(st.session_state.stop_event,), daemon=True)
-                t.start()
-                st.session_state.bot_thread = t
-                st.session_state.bot_running = True
-                st.rerun()
-
-    with col_stop:
-        if st.button("Stop Bot", disabled=not st.session_state.bot_running, type="secondary"):
-            if st.session_state.bot_running:
-                st.session_state.stop_event.set()
-                # Wait briefly for thread to detect stop
-                time.sleep(1) 
-                st.session_state.bot_running = False
-                st.rerun()
-    
-    st.markdown("---")
-    
-    if st.button("Shutdown App", type="primary"):
-        st.session_state.stop_event.set()
-        st.warning("Keep the terminal open to restart easily.")
-        time.sleep(1)
-        os._exit(0)
-    
-    st.markdown("---")
-    if st.session_state.bot_running:
-        st.success("Bot is Running")
-    else:
-        st.warning("Bot is Stopped")
-
-# Custom CSS for modern look
-st.markdown("""
-<style>
-    .metric-card {
-        background-color: #1E1E1E;
-        padding: 20px;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
-    }
-    .stMetric > div {
-        justify-content: center;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-state_manager = StateManager()
-
-def create_gauge(score):
-    fig = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = score,
-        domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "ATS Score"},
-        gauge = {
-            'axis': {'range': [None, 100]},
-            'bar': {'color': "#00CC96" if score >= 70 else "#EF553B"},
-            'steps': [
-                {'range': [0, 50], 'color': "lightgray"},
-                {'range': [50, 70], 'color': "gray"},
-            ],
-        }
-    ))
-    return fig
-
-# Header
-col1, col2 = st.columns([3, 1])
-with col1:
-    st.title("🤖 Autonomous Hiring Agent")
-with col2:
-    st.empty() 
-
-# Placeholder for auto-refresh
-placeholder = st.empty()
-
-while True:
-    state = state_manager.load_state()
-    
-    with placeholder.container():
-        # Top Row: Pulse & Metrics
-        status_col, count_col, last_active_col = st.columns(3)
-        
-        with status_col:
-            st.metric("Status", state.get("status", "Unknown"))
-            
-        with count_col:
-            st.metric("Processed Candidates", state.get("processed_count", 0))
-
-        with last_active_col:
-            st.metric("Last Updated", time.strftime("%H:%M:%S", time.localtime(state.get("last_updated", 0))))
-
-        st.markdown("---")
-
-        # Main Content: Latest Candidate vs Log
-        main_col, side_col = st.columns([2, 1])
-        
-        with main_col:
-            st.subheader("Latest Analysis")
-            candidate = state.get("latest_candidate")
-            
-            if candidate:
-                c1, c2 = st.columns([1, 1])
-                with c1:
-                    st.markdown(f"**Name:** {candidate.get('name')}")
-                    st.markdown(f"**Decision:** `{candidate.get('decision')}`")
-                    
-                    # Chart
-                    st.plotly_chart(create_gauge(candidate.get('score', 0)), use_container_width=True, key=f"gauge_{time.time()}")
-                
-                with c2:
-                    st.markdown("**Score Breakdown**")
-                    breakdown = candidate.get("breakdown", {})
-                    st.write(breakdown)
-                    
-                    st.markdown("**Skills**")
-                    st.markdown(", ".join(candidate.get("skills", [])[:10]))
+    with col1:
+        if st.button("▶️ Start Bot", use_container_width=True):
+            if st.session_state.bot_thread is None or not st.session_state.bot_thread.is_alive():
+                # Initialize bot service with parameters
+                st.session_state.bot_service = BotService(
+                    jd_path="data/jd.txt",
+                    model="llama3.2:3b",
+                    cutoff=70,
+                    interval=10
+                )
+                st.session_state.stop_event = threading.Event()
+                st.session_state.bot_thread = threading.Thread(
+                    target=st.session_state.bot_service.run,
+                    args=(st.session_state.stop_event,),
+                    daemon=True
+                )
+                st.session_state.bot_thread.start()
+                st.success("Bot started!")
             else:
-                st.info("Waiting for first candidate...")
+                st.warning("Bot is already running")
+    
+    with col2:
+        if st.button("⏸️ Stop Bot", use_container_width=True):
+            if st.session_state.bot_service and hasattr(st.session_state, 'stop_event'):
+                st.session_state.stop_event.set()
+                st.session_state.bot_thread = None
+                st.session_state.bot_service = None
+                st.info("Bot stopped")
+            else:
+                st.warning("Bot is not running")
+    
+    st.divider()
+    
+    # Bot status
+    if st.session_state.bot_thread and st.session_state.bot_thread.is_alive():
+        st.success("🟢 Bot Status: Running")
+    else:
+        st.error("🔴 Bot Status: Stopped")
+    
+    st.divider()
+    
+    if st.button("🔄 Shutdown App", use_container_width=True):
+        if st.session_state.bot_service and hasattr(st.session_state, 'stop_event'):
+            st.session_state.stop_event.set()
+        st.stop()
 
-        with side_col:
-            st.subheader("Live Activity Log")
-            logs = state.get("activity_log", [])
-            for log in reversed(logs[-20:]): # Show more logs
-                st.text(log)
+# Auto-refresh
+st_autorefresh = st.empty()
+with st_autorefresh:
+    time.sleep(2)
+    st.rerun()
 
-    time.sleep(1)
+# Load state
+state = state_mgr.load_state()
+
+# Metrics
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric("Total Processed", state.get("total_processed", 0))
+
+with col2:
+    st.metric("Proceeded", state.get("proceeded", 0), delta_color="normal")
+
+with col3:
+    st.metric("Rejected", state.get("rejected", 0), delta_color="inverse")
+
+with col4:
+    avg_score = state.get("average_score", 0)
+    st.metric("Avg Score", f"{avg_score:.1f}")
+
+st.divider()
+
+# Two column layout
+col_left, col_right = st.columns([1, 1])
+
+with col_left:
+    st.subheader("📋 Recent Logs")
+    logs = state.get("logs", [])
+    
+    if logs:
+        # Show last 10 logs
+        for log in logs[-10:]:
+            timestamp = log.get("timestamp", "")
+            message = log.get("message", "")
+            level = log.get("level", "INFO")
+            
+            if level == "ERROR":
+                st.error(f"[{timestamp}] {message}")
+            elif level == "WARNING":
+                st.warning(f"[{timestamp}] {message}")
+            elif level == "SUCCESS":
+                st.success(f"[{timestamp}] {message}")
+            else:
+                st.info(f"[{timestamp}] {message}")
+    else:
+        st.info("No logs yet. Start the bot to begin processing.")
+
+with col_right:
+    st.subheader("👥 Recent Candidates")
+    candidates = state.get("candidates", [])
+    
+    if candidates:
+        for candidate in candidates[-5:]:
+            with st.expander(f"📧 {candidate.get('name', 'Unknown')} - Score: {candidate.get('score', 0):.1f}"):
+                st.write(f"**Email:** {candidate.get('email', 'N/A')}")
+                st.write(f"**Experience:** {candidate.get('experience', 0)} years")
+                st.write(f"**Decision:** {candidate.get('decision', 'N/A')}")
+                
+                # Score breakdown
+                breakdown = candidate.get('breakdown', {})
+                if breakdown:
+                    st.write("**Score Breakdown:**")
+                    fig = go.Figure(data=[
+                        go.Bar(
+                            x=['Skills', 'Experience', 'Keywords', 'Education'],
+                            y=[
+                                breakdown.get('skill_score', 0),
+                                breakdown.get('experience_score', 0),
+                                breakdown.get('keyword_score', 0),
+                                breakdown.get('education_score', 0)
+                            ],
+                            marker_color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A']
+                        )
+                    ])
+                    fig.update_layout(
+                        height=250,
+                        margin=dict(l=0, r=0, t=0, b=0),
+                        yaxis_range=[0, 100]
+                    )
+                    st.plotly_chart(fig, use_container_width=True, key=f"chart_{candidate.get('email', '')}")
+                
+                # Skills
+                skills = candidate.get('skills', [])
+                if skills:
+                    st.write(f"**Skills:** {', '.join(skills[:10])}")
+    else:
+        st.info("No candidates processed yet.")
+
+st.divider()
+
+# Footer
+st.caption("🤖 Powered by Ollama (Llama 3.2) | Built with Streamlit")

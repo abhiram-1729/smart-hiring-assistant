@@ -95,12 +95,34 @@ Rules:
                 data.pop("properties", None)
 
                 # 3. Handle nested "value" keys (e.g. {"field": {"value": 85}})
-                for key, val in data.items():
+                for key, val in list(data.items()):
                     if isinstance(val, dict) and "value" in val:
                         # Heuristic: if it has "value", use that.
                         # But be careful it's not some actual nested dict user wanted.
                         # Given our models (simple integers/strings mostly), this is safely likely a hallucination.
                         data[key] = val["value"]
+
+            # Final validation: if data is empty or only has schema keys, the LLM completely failed
+            # This is a last resort - return a default/error object
+            if not data or all(k in {"title", "type", "properties", "required"} for k in data.keys()):
+                print(f"WARNING: LLM returned pure schema with no data. Using fallback defaults.")
+                # Return a minimal valid object based on schema
+                schema_fields = schema.model_json_schema().get("properties", {})
+                data = {}
+                for field_name, field_info in schema_fields.items():
+                    field_type = field_info.get("type")
+                    if field_type == "number":
+                        data[field_name] = 0.0
+                    elif field_type == "integer":
+                        data[field_name] = 0
+                    elif field_type == "string":
+                        data[field_name] = ""
+                    elif field_type == "boolean":
+                        data[field_name] = False
+                    elif field_type == "array":
+                        data[field_name] = []
+                    else:
+                        data[field_name] = None
 
             return schema.model_validate(data)
         except Exception as e:

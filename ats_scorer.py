@@ -25,15 +25,23 @@ class ATSScorer:
         Education: {', '.join(resume.education)}
         
         ### Scoring Instructions (0-100 Scale)
-        1. **Skill Score**: Match candidate skills to JD (Mandatory counts double). heavily penalize missing mandatory skills. Handle semantic matches (e.g. "React" == "React.js").
-        2. **Experience Score**: Does their experience years meet the minimum? Are the projects relevant?
-        3. **Keyword Score**: How well does the resume reflect industry standard keywords for this role?
-        4. **Education Score**: 100 if they meet degree requirements, 50 if partial, 0 if missing.
-        5. **Final ATS Score**: Weighted average: Skills (50%) + Exp (20%) + Keywords (20%) + Edu (10%).
+        ### Scoring Instructions (0-100 Scale)
+        1. **Skill Score**: Compare Candidate Skills vs JD Skills. 
+           - Match indiscriminately (e.g. "Python" == "Python 3", "React" == "ReactJS"). 
+           - If most mandatory skills are present, score high (>80). 
+           - If some are missing but related skills exist, give partial credit.
+        2. **Experience Score**: 
+           - If Candidate Experience >= Min Experience, score 100.
+           - If Candidate Experience is within 1 year of Min, score 80.
+           - Otherwise, scale down.
+        3. **Keyword Score**: How well does the resume terminology align with the JD?
+        4. **Education Score**: 100 for relevant degree, 50 for unrelated degree, 0 if missing.
+        5. **Final ATS Score**: Calculate weighted average: Skills (50%) + Exp (20%) + Keywords (20%) + Edu (10%).
 
         Return valid JSON matching the ATSScore schema.
         
         CRITICAL: The following is just an example of the JSON format. Do NOT use these scores. You MUST calculate scores based on the actual candidate data above.
+        Your response must contain ACTUAL NUMBERS (like 75.5), NOT schema definitions (like {{"type": "number"}}).
         
         Example JSON Structure:
         {{

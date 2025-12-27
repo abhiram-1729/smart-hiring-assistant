@@ -6,6 +6,9 @@ An intelligent, automated hiring assistant that processes job applications via G
 ![Streamlit](https://img.shields.io/badge/streamlit-1.40-red.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
+## 🎥 Demo
+[Watch the Demo Video](video/vedio.mov)
+
 ## ✨ Features
 
 - 📧 **Gmail API Integration** - Automatically monitors inbox for job applications
